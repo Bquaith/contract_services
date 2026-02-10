@@ -19,6 +19,7 @@ from app.schemas.enums import (
     ValidationVerdict,
     VersionStatus,
 )
+from app.schemas.introspection import IntrospectionRequest, IntrospectionResponse
 from app.schemas.validation import SchemaValidationRequest, SchemaValidationResponse, ValidationViolation
 from app.schemas.version import (
     CompatibilityCheckRequest,
@@ -47,6 +48,8 @@ __all__ = [
     "EntityType",
     "FieldSpec",
     "FieldType",
+    "IntrospectionRequest",
+    "IntrospectionResponse",
     "KeysSpec",
     "PublishedContractResponse",
     "SchemaValidationRequest",

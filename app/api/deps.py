@@ -4,7 +4,13 @@ from fastapi import Depends, Header
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.service import CompatibilityService, ContractService, ContractVersionService, ValidationService
+from app.service import (
+    CompatibilityService,
+    ContractService,
+    ContractVersionService,
+    IntrospectionService,
+    ValidationService,
+)
 
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -20,6 +26,10 @@ def get_version_service(db: DbSession) -> ContractVersionService:
 
 def get_compatibility_service(db: DbSession) -> CompatibilityService:
     return CompatibilityService(db)
+
+
+def get_introspection_service(db: DbSession) -> IntrospectionService:
+    return IntrospectionService(db)
 
 
 def get_validation_service(db: DbSession) -> ValidationService:

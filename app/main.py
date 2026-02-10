@@ -3,7 +3,13 @@ from fastapi.responses import JSONResponse
 
 from app.api.errors import error_payload, register_exception_handlers
 from app.api.metrics import record_http_request
-from app.api.routers import contracts_router, publish_router, system_router, validation_router
+from app.api.routers import (
+    contracts_router,
+    introspection_router,
+    publish_router,
+    system_router,
+    validation_router,
+)
 from app.config import get_settings
 from app.logging import configure_logging
 
@@ -45,6 +51,7 @@ def create_app() -> FastAPI:
 
     app.include_router(system_router)
     app.include_router(validation_router)
+    app.include_router(introspection_router)
     app.include_router(contracts_router)
     app.include_router(publish_router)
 
