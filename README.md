@@ -11,6 +11,7 @@
 - Promote/deprecate версий
 - Валидация схемы контракта
 - Проверка совместимости (`backward`, `forward`, `full`, `none`)
+- Генерация draft-контракта из существующей PostgreSQL таблицы (schema introspection)
 - Публикация active/конкретной версии для ingestion/runtime
 - Soft-delete (архивирование)
 - OpenAPI/Swagger (`/docs`)
@@ -38,6 +39,7 @@
 │   │   ├── metrics.py
 │   │   └── routers
 │   │       ├── contracts.py
+│   │       ├── introspection.py
 │   │       ├── publish.py
 │   │       ├── system.py
 │   │       └── validation.py
@@ -56,11 +58,13 @@
 │   │   ├── common.py
 │   │   ├── contract.py
 │   │   ├── enums.py
+│   │   ├── introspection.py
 │   │   ├── validation.py
 │   │   └── version.py
 │   ├── service
 │   │   ├── compatibility.py
 │   │   ├── contracts.py
+│   │   ├── introspection.py
 │   │   ├── utils.py
 │   │   ├── validation.py
 │   │   └── versions.py
@@ -78,9 +82,11 @@
 │       └── 0002-jsonb-semver.md
 ├── tests
 │   ├── integration
-│   │   └── test_api.py
+│   │   ├── test_api.py
+│   │   └── test_introspection_api.py
 │   ├── unit
 │   │   ├── test_compatibility.py
+│   │   ├── test_introspection_mapping.py
 │   │   └── test_schema_validator.py
 │   └── conftest.py
 ├── .env.example
@@ -236,6 +242,35 @@ curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions/1.1.0/compatibility" \
 ```bash
 curl "$BASE_URL/contracts/sales/orders/active"
 ```
+
+## Генерация контракта из существующей таблицы
+
+Эндпоинт `POST /introspect` подключается к PostgreSQL, считывает структуру таблицы (колонки + PK),
+создаёт новый контракт в статусе `draft` и версию `0.1.0` в статусе `draft`.
+
+```bash
+curl -X POST "$BASE_URL/introspect" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $API_KEY" \
+  -H "X-Actor: platform-admin" \
+  -d '{
+    "connection_string": "postgresql+psycopg://postgres:postgres@localhost:5432/source_db",
+    "schema": "public",
+    "table_name": "orders",
+    "namespace": "erp",
+    "name": "orders_contract",
+    "entity_type": "table",
+    "target_layer": "raw"
+  }'
+```
+
+Ограничения introspection:
+
+- поддерживается только PostgreSQL
+- поддерживаются только таблицы (`BASE TABLE`), не `VIEW`
+- если контракт с таким `namespace + name` уже есть, возвращается `409`
+- если таблица не найдена, возвращается `404`
+- `business` и `hash_keys` автоматически не заполняются
 
 ## Кратко о schema evolution
 
