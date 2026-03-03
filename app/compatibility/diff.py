@@ -9,7 +9,6 @@ def _field_projection(field: FieldSpec) -> dict[str, Any]:
         "nullable": field.nullable,
         "default": field.default,
         "description": field.description,
-        "pii_flag": field.pii_flag,
     }
 
 

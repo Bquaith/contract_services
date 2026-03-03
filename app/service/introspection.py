@@ -264,7 +264,6 @@ class IntrospectionService:
                         nullable=str(row["is_nullable"]).upper() == "YES",
                         default=None,
                         description=None,
-                        pii_flag=False,
                     )
                 )
 

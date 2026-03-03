@@ -19,8 +19,8 @@ def _contract_payload(namespace: str = "sales", name: str = "orders") -> dict[st
 def _schema_v1() -> dict[str, Any]:
     return {
         "fields": [
-            {"name": "order_id", "type": "string", "nullable": False, "pii_flag": False},
-            {"name": "amount", "type": "int", "nullable": True, "pii_flag": False},
+            {"name": "order_id", "type": "string", "nullable": False},
+            {"name": "amount", "type": "int", "nullable": True},
         ],
         "keys": {
             "primary": ["order_id"],
@@ -36,9 +36,9 @@ def _schema_v1() -> dict[str, Any]:
 def _schema_v2_breaking() -> dict[str, Any]:
     return {
         "fields": [
-            {"name": "order_id", "type": "string", "nullable": False, "pii_flag": False},
-            {"name": "amount", "type": "int", "nullable": True, "pii_flag": False},
-            {"name": "source_system", "type": "string", "nullable": False, "pii_flag": False},
+            {"name": "order_id", "type": "string", "nullable": False},
+            {"name": "amount", "type": "int", "nullable": True},
+            {"name": "source_system", "type": "string", "nullable": False},
         ],
         "keys": {
             "primary": ["order_id"],

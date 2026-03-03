@@ -1,3 +1,31 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "data-contracts-service"
+version = "0.1.0"
+description = "Infrastructure service for Data Contracts management"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Data Platform Team" }]
+dependencies = [
+    "fastapi>=0.116,<1.0",
+    "uvicorn[standard]>=0.35,<1.0",
+    "SQLAlchemy>=2.0,<3.0",
+    "alembic>=1.14,<2.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "pydantic>=2.11,<3.0",
+    "pydantic-settings>=2.7,<3.0",
+    "prometheus-client>=0.21,<1.0",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -5,3 +33,31 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = ["E501"]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503", "E501"]
+max-complexity = 12
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "alembic/versions",
+]
+
+[tool.mypy]
+python_version = "3.11"
+pretty = true
+show_error_codes = true
+warn_unused_configs = true
+warn_return_any = true
+warn_unused_ignores = true
+strict_equality = true
+check_untyped_defs = true
+no_implicit_optional = true
+exclude = "(^alembic/versions/)"
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false

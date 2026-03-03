@@ -15,7 +15,6 @@ class FieldSpec(BaseModel):
     nullable: bool = True
     default: Any | None = None
     description: str | None = None
-    pii_flag: bool = False
 
 
 class KeysSpec(BaseModel):

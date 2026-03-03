@@ -1,0 +1,1966 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "data-contracts-service",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Metrics",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validate/schema": {
+      "post": {
+        "tags": [
+          "validation"
+        ],
+        "summary": "Validate Schema",
+        "operationId": "validate_schema_validate_schema_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchemaValidationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/introspect": {
+      "post": {
+        "tags": [
+          "introspection"
+        ],
+        "summary": "Introspect Table",
+        "operationId": "introspect_table_introspect_post",
+        "parameters": [
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntrospectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntrospectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Create Contract",
+        "operationId": "create_contract_contracts_post",
+        "parameters": [
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "List Contracts",
+        "operationId": "list_contracts_contracts_get",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Namespace"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "name": "owner",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ContractStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tag"
+            }
+          },
+          {
+            "name": "target_layer",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TargetLayer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Layer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractListItem"
+                  },
+                  "title": "Response List Contracts Contracts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}": {
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Get Contract",
+        "operationId": "get_contract_contracts__contract_id__get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Update Contract",
+        "operationId": "update_contract_contracts__contract_id__patch",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Archive Contract",
+        "operationId": "archive_contract_contracts__contract_id__delete",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/versions": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Create Version",
+        "operationId": "create_version_contracts__contract_id__versions_post",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractVersionCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractVersionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "List Versions",
+        "operationId": "list_versions_contracts__contract_id__versions_get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractVersionResponse"
+                  },
+                  "title": "Response List Versions Contracts  Contract Id  Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/versions/{version}": {
+      "get": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Get Version",
+        "operationId": "get_version_contracts__contract_id__versions__version__get",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractVersionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/versions/{version}/promote": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Promote Version",
+        "operationId": "promote_version_contracts__contract_id__versions__version__promote_post",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractVersionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/versions/{version}/deprecate": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Deprecate Version",
+        "operationId": "deprecate_version_contracts__contract_id__versions__version__deprecate_post",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractVersionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/versions/{new_version}/compatibility": {
+      "post": {
+        "tags": [
+          "contracts"
+        ],
+        "summary": "Check Compatibility",
+        "operationId": "check_compatibility_contracts__contract_id__versions__new_version__compatibility_post",
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "new_version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "New Version"
+            }
+          },
+          {
+            "name": "X-Actor",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Actor"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompatibilityCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompatibilityCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{namespace}/{name}/active": {
+      "get": {
+        "tags": [
+          "publish"
+        ],
+        "summary": "Get Active Contract",
+        "operationId": "get_active_contract_contracts__namespace___name__active_get",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Namespace"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{namespace}/{name}/version/{version}": {
+      "get": {
+        "tags": [
+          "publish"
+        ],
+        "summary": "Get Contract Version",
+        "operationId": "get_contract_version_contracts__namespace___name__version__version__get",
+        "parameters": [
+          {
+            "name": "namespace",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Namespace"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompatibilityCheckRequest": {
+        "properties": {
+          "base_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Version"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CompatibilityMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CompatibilityCheckRequest"
+      },
+      "CompatibilityCheckResponse": {
+        "properties": {
+          "contract_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Contract Id"
+          },
+          "base_version": {
+            "type": "string",
+            "title": "Base Version"
+          },
+          "candidate_version": {
+            "type": "string",
+            "title": "Candidate Version"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/CompatibilityMode"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/CompatibilityVerdict"
+          },
+          "violations": {
+            "items": {
+              "$ref": "#/components/schemas/CompatibilityViolation"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "diff": {
+            "$ref": "#/components/schemas/DiffResult"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_id",
+          "base_version",
+          "candidate_version",
+          "mode",
+          "verdict",
+          "diff"
+        ],
+        "title": "CompatibilityCheckResponse"
+      },
+      "CompatibilityMode": {
+        "type": "string",
+        "enum": [
+          "backward",
+          "forward",
+          "full",
+          "none"
+        ],
+        "title": "CompatibilityMode"
+      },
+      "CompatibilityVerdict": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "warn",
+          "fail"
+        ],
+        "title": "CompatibilityVerdict"
+      },
+      "CompatibilityViolation": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/CompatibilityVerdict"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "severity"
+        ],
+        "title": "CompatibilityViolation"
+      },
+      "ContractCreateRequest": {
+        "properties": {
+          "namespace": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "entity_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Entity Name"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owners": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Owners"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "target_layer": {
+            "$ref": "#/components/schemas/TargetLayer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "namespace",
+          "name",
+          "entity_name",
+          "entity_type",
+          "target_layer"
+        ],
+        "title": "ContractCreateRequest"
+      },
+      "ContractListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owners": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Owners"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "target_layer": {
+            "$ref": "#/components/schemas/TargetLayer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "active_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "namespace",
+          "name",
+          "entity_name",
+          "entity_type",
+          "description",
+          "owners",
+          "tags",
+          "target_layer",
+          "status",
+          "active_version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ContractListItem"
+      },
+      "ContractResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "namespace": {
+            "type": "string",
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owners": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Owners"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "target_layer": {
+            "$ref": "#/components/schemas/TargetLayer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "active_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "namespace",
+          "name",
+          "entity_name",
+          "entity_type",
+          "description",
+          "owners",
+          "tags",
+          "target_layer",
+          "status",
+          "active_version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ContractResponse"
+      },
+      "ContractSchema": {
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldSpec"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "keys": {
+            "$ref": "#/components/schemas/KeysSpec"
+          },
+          "constraints": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Constraints"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "keys"
+        ],
+        "title": "ContractSchema"
+      },
+      "ContractStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "active",
+          "archived"
+        ],
+        "title": "ContractStatus"
+      },
+      "ContractUpdateRequest": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "owners": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owners"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContractStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_layer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetLayer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ContractUpdateRequest"
+      },
+      "ContractVersionCreateRequest": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Version"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/ContractSchema"
+          },
+          "compatibility_mode": {
+            "$ref": "#/components/schemas/CompatibilityMode",
+            "default": "backward"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "ContractVersionCreateRequest"
+      },
+      "ContractVersionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "contract_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Contract Id"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VersionStatus"
+          },
+          "schema_json": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Schema Json"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "compatibility_mode": {
+            "$ref": "#/components/schemas/CompatibilityMode"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "is_locked": {
+            "type": "boolean",
+            "title": "Is Locked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contract_id",
+          "version",
+          "status",
+          "checksum",
+          "compatibility_mode",
+          "created_at",
+          "created_by",
+          "is_locked"
+        ],
+        "title": "ContractVersionResponse"
+      },
+      "DiffResult": {
+        "properties": {
+          "added_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Added Fields"
+          },
+          "removed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Removed Fields"
+          },
+          "changed_fields": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Changed Fields"
+          },
+          "changed_keys": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed Keys"
+          },
+          "changed_constraints": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed Constraints"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DiffResult"
+      },
+      "EntityType": {
+        "type": "string",
+        "enum": [
+          "table",
+          "topic"
+        ],
+        "title": "EntityType"
+      },
+      "FieldSpec": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "type": {
+            "$ref": "#/components/schemas/FieldType"
+          },
+          "nullable": {
+            "type": "boolean",
+            "title": "Nullable",
+            "default": true
+          },
+          "default": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "title": "FieldSpec"
+      },
+      "FieldType": {
+        "type": "string",
+        "enum": [
+          "string",
+          "int",
+          "float",
+          "bool",
+          "date",
+          "timestamp",
+          "decimal",
+          "json"
+        ],
+        "title": "FieldType"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IntrospectionRequest": {
+        "properties": {
+          "connection_string": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Connection String"
+          },
+          "schema": {
+            "type": "string",
+            "maxLength": 63,
+            "minLength": 1,
+            "title": "Schema"
+          },
+          "table_name": {
+            "type": "string",
+            "maxLength": 63,
+            "minLength": 1,
+            "title": "Table Name"
+          },
+          "namespace": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Namespace"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType",
+            "default": "table"
+          },
+          "target_layer": {
+            "$ref": "#/components/schemas/TargetLayer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_string",
+          "schema",
+          "table_name",
+          "namespace",
+          "name",
+          "target_layer"
+        ],
+        "title": "IntrospectionRequest"
+      },
+      "IntrospectionResponse": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/ContractResponse"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ContractVersionResponse"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract",
+          "version"
+        ],
+        "title": "IntrospectionResponse"
+      },
+      "KeysSpec": {
+        "properties": {
+          "primary": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Primary"
+          },
+          "business": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Business"
+          },
+          "partition": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Partition"
+          },
+          "hash_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hash Keys"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "KeysSpec"
+      },
+      "PublishedContractResponse": {
+        "properties": {
+          "contract": {
+            "$ref": "#/components/schemas/ContractResponse"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ContractVersionResponse"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract",
+          "version"
+        ],
+        "title": "PublishedContractResponse"
+      },
+      "SchemaValidationRequest": {
+        "properties": {
+          "schema": {
+            "$ref": "#/components/schemas/ContractSchema"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SchemaValidationRequest"
+      },
+      "SchemaValidationResponse": {
+        "properties": {
+          "verdict": {
+            "$ref": "#/components/schemas/ValidationVerdict"
+          },
+          "violations": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationViolation"
+            },
+            "type": "array",
+            "title": "Violations"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "verdict"
+        ],
+        "title": "SchemaValidationResponse"
+      },
+      "TargetLayer": {
+        "type": "string",
+        "enum": [
+          "raw",
+          "curated",
+          "audit"
+        ],
+        "title": "TargetLayer"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationVerdict": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "fail"
+        ],
+        "title": "ValidationVerdict"
+      },
+      "ValidationViolation": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ValidationViolation"
+      },
+      "VersionStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "stable",
+          "deprecated"
+        ],
+        "title": "VersionStatus"
+      }
+    }
+  }
+}
