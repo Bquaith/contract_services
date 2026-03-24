@@ -15,6 +15,7 @@ from app.schemas.enums import (
     TargetLayer,
     ValidationTarget,
     ValidationVerdict,
+    VersionBumpType,
     VersionStatus,
 )
 
@@ -105,6 +106,20 @@ class CompatibilityCheck(Base):
     verdict: Mapped[CompatibilityVerdict] = mapped_column(
         SAEnum(CompatibilityVerdict, name="compatibility_verdict", native_enum=False), nullable=False
     )
+    version_bump: Mapped[VersionBumpType | None] = mapped_column(
+        SAEnum(VersionBumpType, name="version_bump_type", native_enum=False),
+        nullable=True,
+    )
+    backward_compatible: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false"), default=False
+    )
+    forward_compatible: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false"), default=False
+    )
+    full_compatible: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false"), default=False
+    )
+    policy_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     violations_json: Mapped[list[dict]] = mapped_column(
         JSONB, nullable=False, server_default=text("'[]'::jsonb")
     )

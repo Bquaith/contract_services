@@ -4,35 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.schemas.enums import ContractStatus, EntityType, FieldType, TargetLayer
+from app.schemas.enums import ContractStatus, EntityType, TargetLayer
 
-
-class FieldSpec(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    name: str = Field(min_length=1, max_length=128)
-    type: FieldType
-    nullable: bool = True
-    default: Any | None = None
-    description: str | None = None
-
-
-class KeysSpec(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    primary: list[str] = Field(default_factory=list)
-    business: list[str] = Field(default_factory=list)
-    partition: list[str] = Field(default_factory=list)
-    hash_keys: list[str] = Field(default_factory=list)
-
-
-class ContractSchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    fields: list[FieldSpec] = Field(default_factory=list)
-    keys: KeysSpec
-    constraints: list[dict[str, Any]] = Field(default_factory=list)
-    description: str | None = None
+JsonSchemaDocument = dict[str, Any]
 
 
 class ContractMetadata(BaseModel):

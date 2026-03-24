@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -72,7 +72,7 @@ async def unexpected_handler(_: Request, exc: Exception) -> JSONResponse:
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(ApiError, api_error_handler)
-    app.add_exception_handler(RequestValidationError, request_validation_handler)
-    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-    app.add_exception_handler(Exception, unexpected_handler)
+    app.add_exception_handler(ApiError, cast(Any, api_error_handler))
+    app.add_exception_handler(RequestValidationError, cast(Any, request_validation_handler))
+    app.add_exception_handler(StarletteHTTPException, cast(Any, http_exception_handler))
+    app.add_exception_handler(Exception, cast(Any, unexpected_handler))

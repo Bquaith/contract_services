@@ -11,9 +11,9 @@ class ValidationService:
     def __init__(self, session: Session):
         self.session = session
 
-    def validate_schema(self, schema_payload) -> SchemaValidationResponse:
+    def validate_schema(self, schema_payload: dict) -> SchemaValidationResponse:
         result = validate_contract_schema(schema_payload)
-        checksum = calculate_checksum(schema_payload.model_dump(mode="json"))
+        checksum = calculate_checksum(schema_payload)
 
         run = ValidationRun(
             target=ValidationTarget.SCHEMA,

@@ -14,4 +14,4 @@ def validate_schema(
     payload: SchemaValidationRequest,
     service: Annotated[ValidationService, Depends(get_validation_service)],
 ) -> SchemaValidationResponse:
-    return service.validate_schema(payload.schema)
+    return service.validate_schema(payload.schema_document)

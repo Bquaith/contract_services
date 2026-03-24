@@ -2,28 +2,40 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from app.schemas.contract import ContractResponse, ContractSchema
-from app.schemas.enums import CompatibilityMode, CompatibilityVerdict, VersionStatus
+from app.schemas.contract import ContractResponse, JsonSchemaDocument
+from app.schemas.enums import (
+    CompatibilityDirection,
+    CompatibilityMode,
+    CompatibilityVerdict,
+    VersionBumpType,
+    VersionStatus,
+)
 
 
 class ContractVersionCreateRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     version: str = Field(min_length=1, max_length=64)
-    schema: ContractSchema
+    schema_document: JsonSchemaDocument = Field(
+        validation_alias=AliasChoices("schema", "schema_document"),
+        serialization_alias="schema",
+    )
     compatibility_mode: CompatibilityMode = CompatibilityMode.BACKWARD
 
 
 class ContractVersionResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
     id: UUID
     contract_id: UUID
     version: str
     status: VersionStatus
-    schema_json: dict[str, Any]
+    schema_document: JsonSchemaDocument = Field(
+        validation_alias=AliasChoices("schema_json", "schema_document"),
+        serialization_alias="schema_json",
+    )
     checksum: str
     compatibility_mode: CompatibilityMode
     created_at: datetime
@@ -44,17 +56,20 @@ class CompatibilityViolation(BaseModel):
     code: str
     message: str
     severity: CompatibilityVerdict
-    field: str | None = None
+    direction: CompatibilityDirection
+    path: str | None = None
 
 
 class DiffResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    added_fields: list[str] = Field(default_factory=list)
-    removed_fields: list[str] = Field(default_factory=list)
-    changed_fields: list[dict[str, Any]] = Field(default_factory=list)
-    changed_keys: dict[str, Any] | None = None
-    changed_constraints: dict[str, Any] | None = None
+    added_properties: list[str] = Field(default_factory=list)
+    removed_properties: list[str] = Field(default_factory=list)
+    changed_properties: list[dict[str, Any]] = Field(default_factory=list)
+    required_added: list[str] = Field(default_factory=list)
+    required_removed: list[str] = Field(default_factory=list)
+    additional_properties_changed: dict[str, Any] | None = None
+    extensions_changed: dict[str, Any] | None = None
 
 
 class CompatibilityCheckResponse(BaseModel):
@@ -65,6 +80,11 @@ class CompatibilityCheckResponse(BaseModel):
     candidate_version: str
     mode: CompatibilityMode
     verdict: CompatibilityVerdict
+    version_bump: VersionBumpType | None = None
+    backward_compatible: bool
+    forward_compatible: bool
+    full_compatible: bool
+    policy_passed: bool | None = None
     violations: list[CompatibilityViolation] = Field(default_factory=list)
     diff: DiffResult
 

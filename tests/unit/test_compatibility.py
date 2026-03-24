@@ -1,76 +1,81 @@
 from app.compatibility.rules import evaluate_compatibility
-from app.schemas.contract import ContractSchema, FieldSpec, KeysSpec
-from app.schemas.enums import CompatibilityMode, CompatibilityVerdict, FieldType
+from app.schemas.enums import CompatibilityMode, CompatibilityVerdict
 
 
-def _schema_v1() -> ContractSchema:
-    return ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="amount", type=FieldType.INT, nullable=True),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+def _schema_v1() -> dict:
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "amount": {"type": "integer"},
+        },
+        "required": ["id"],
+        "additionalProperties": False,
+        "x-primaryKey": ["id"],
+    }
 
 
-def test_backward_add_nullable_ok() -> None:
+def test_backward_add_optional_property_ok() -> None:
     old = _schema_v1()
-    new = ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="amount", type=FieldType.INT, nullable=True),
-            FieldSpec(name="comment", type=FieldType.STRING, nullable=True),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+    new = {
+        **_schema_v1(),
+        "properties": {
+            **_schema_v1()["properties"],
+            "comment": {"type": "string"},
+        },
+    }
 
-    verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
+    report, verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
+    assert report["backward_compatible"] is True
+    assert report["forward_compatible"] is False
     assert verdict == CompatibilityVerdict.OK
-    assert violations == []
+    assert any(v["direction"] == "forward" for v in violations)
 
 
-def test_backward_add_required_fail() -> None:
+def test_backward_add_required_property_fail() -> None:
     old = _schema_v1()
-    new = ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="amount", type=FieldType.INT, nullable=True),
-            FieldSpec(name="country", type=FieldType.STRING, nullable=False),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+    new = {
+        **_schema_v1(),
+        "properties": {
+            **_schema_v1()["properties"],
+            "country": {"type": "string"},
+        },
+        "required": ["id", "country"],
+    }
 
-    verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
+    report, verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
+    assert report["backward_compatible"] is False
     assert verdict == CompatibilityVerdict.FAIL
-    assert any(v["code"] == "compatibility.backward.added_required" for v in violations)
+    assert any(v["code"] == "compatibility.object.required" for v in violations)
 
 
-def test_backward_int_to_float_warn() -> None:
+def test_backward_integer_to_number_is_allowed() -> None:
     old = _schema_v1()
-    new = ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="amount", type=FieldType.FLOAT, nullable=True),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+    new = {
+        **_schema_v1(),
+        "properties": {
+            "id": {"type": "string"},
+            "amount": {"type": "number"},
+        },
+    }
 
-    verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
-    assert verdict == CompatibilityVerdict.WARN
-    assert any(v["severity"] == CompatibilityVerdict.WARN.value for v in violations)
+    report, verdict, violations = evaluate_compatibility(old, new, CompatibilityMode.BACKWARD)
+    assert report["backward_compatible"] is True
+    assert report["forward_compatible"] is False
+    assert verdict == CompatibilityVerdict.OK
+    assert any(v["code"] == "compatibility.schema.type" for v in violations)
 
 
-def test_full_remove_field_fail() -> None:
+def test_full_remove_property_fail() -> None:
     old = _schema_v1()
-    new = ContractSchema(
-        fields=[FieldSpec(name="id", type=FieldType.STRING, nullable=False)],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+    new = {
+        **_schema_v1(),
+        "properties": {
+            "id": {"type": "string"},
+        },
+    }
 
-    verdict, _ = evaluate_compatibility(old, new, CompatibilityMode.FULL)
+    report, verdict, _ = evaluate_compatibility(old, new, CompatibilityMode.FULL)
+    assert report["full_compatible"] is False
     assert verdict == CompatibilityVerdict.FAIL

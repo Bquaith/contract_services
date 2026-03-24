@@ -31,6 +31,11 @@ class CompatibilityMode(str, Enum):
     NONE = "none"
 
 
+class CompatibilityDirection(str, Enum):
+    BACKWARD = "backward"
+    FORWARD = "forward"
+
+
 class CompatibilityVerdict(str, Enum):
     OK = "ok"
     WARN = "warn"
@@ -56,3 +61,9 @@ class ValidationTarget(str, Enum):
 class ValidationVerdict(str, Enum):
     OK = "ok"
     FAIL = "fail"
+
+
+class VersionBumpType(str, Enum):
+    MAJOR = "major"
+    MINOR = "minor"
+    PATCH = "patch"

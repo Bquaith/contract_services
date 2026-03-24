@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
@@ -7,17 +9,18 @@ from sqlalchemy.orm import Session
 
 from app.api.errors import ApiError
 from app.db.models import Contract, ContractVersion
-from app.schemas.contract import ContractSchema, FieldSpec, KeysSpec
-from app.schemas.enums import CompatibilityMode, ContractStatus, EntityType, FieldType, VersionStatus
+from app.schemas.contract import JsonSchemaDocument
+from app.schemas.enums import CompatibilityMode, ContractStatus, EntityType, VersionStatus
 from app.schemas.introspection import IntrospectionRequest
 from app.service.utils import calculate_checksum
 from app.validators import validate_contract_schema
 
 
 DEFAULT_INTROSPECT_VERSION = "0.1.0"
+JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
 
-def map_postgres_type(data_type: str, udt_name: str) -> FieldType | None:
+def map_postgres_type(data_type: str, udt_name: str) -> dict[str, Any] | None:
     normalized_data_type = data_type.lower().strip()
     normalized_udt_name = udt_name.lower().strip()
 
@@ -26,32 +29,38 @@ def map_postgres_type(data_type: str, udt_name: str) -> FieldType | None:
         "bpchar",
         "text",
     }:
-        return FieldType.STRING
+        return {"type": "string"}
 
     if normalized_data_type in {"integer", "bigint", "smallint"} or normalized_udt_name in {
         "int2",
         "int4",
         "int8",
     }:
-        return FieldType.INT
+        return {"type": "integer"}
 
     if normalized_data_type in {"numeric", "decimal"} or normalized_udt_name == "numeric":
-        return FieldType.DECIMAL
+        return {"type": "number"}
+
+    if normalized_data_type in {"real", "double precision"} or normalized_udt_name in {
+        "float4",
+        "float8",
+    }:
+        return {"type": "number"}
 
     if normalized_data_type == "boolean" or normalized_udt_name == "bool":
-        return FieldType.BOOL
+        return {"type": "boolean"}
 
     if normalized_data_type == "date" or normalized_udt_name == "date":
-        return FieldType.DATE
+        return {"type": "string", "format": "date"}
 
     if normalized_data_type in {
         "timestamp without time zone",
         "timestamp with time zone",
     } or normalized_udt_name in {"timestamp", "timestamptz"}:
-        return FieldType.TIMESTAMP
+        return {"type": "string", "format": "date-time"}
 
     if normalized_data_type in {"json", "jsonb"} or normalized_udt_name in {"json", "jsonb"}:
-        return FieldType.JSON
+        return {}
 
     return None
 
@@ -79,25 +88,24 @@ class IntrospectionService:
                     details={"dialect": remote_engine.dialect.name},
                 )
 
-            fields, primary_keys = self._load_table_structure(
+            properties, required_fields, primary_keys = self._load_table_structure(
                 engine=remote_engine,
-                schema_name=payload.schema,
+                schema_name=payload.source_schema,
                 table_name=payload.table_name,
             )
         finally:
             remote_engine.dispose()
 
-        schema_payload = ContractSchema(
-            fields=fields,
-            keys=KeysSpec(
-                primary=primary_keys,
-                business=[],
-                partition=[],
-                hash_keys=[],
-            ),
-            constraints=[],
-            description=f"Generated from {payload.schema}.{payload.table_name}",
-        )
+        schema_payload: JsonSchemaDocument = {
+            "$schema": JSON_SCHEMA_DRAFT,
+            "type": "object",
+            "properties": properties,
+            "required": required_fields,
+            "additionalProperties": False,
+            "description": f"Generated from {payload.source_schema}.{payload.table_name}",
+            "x-primaryKey": primary_keys,
+            "x-businessKey": [],
+        }
 
         validation = validate_contract_schema(schema_payload)
         if validation.verdict.value == "fail":
@@ -124,13 +132,12 @@ class IntrospectionService:
                 details={"namespace": payload.namespace, "name": payload.name},
             )
 
-        schema_json = schema_payload.model_dump(mode="json")
         contract = Contract(
             namespace=payload.namespace,
             name=payload.name,
             entity_name=payload.table_name,
             entity_type=EntityType.TABLE,
-            description=f"Introspected from {payload.schema}.{payload.table_name}",
+            description=f"Introspected from {payload.source_schema}.{payload.table_name}",
             owners=[],
             tags=[],
             target_layer=payload.target_layer,
@@ -142,8 +149,8 @@ class IntrospectionService:
             contract=contract,
             version=DEFAULT_INTROSPECT_VERSION,
             status=VersionStatus.DRAFT,
-            schema_json=schema_json,
-            checksum=calculate_checksum(schema_json),
+            schema_json=schema_payload,
+            checksum=calculate_checksum(schema_payload),
             compatibility_mode=CompatibilityMode.BACKWARD,
             created_by=actor,
             is_locked=False,
@@ -172,7 +179,7 @@ class IntrospectionService:
         engine: Engine,
         schema_name: str,
         table_name: str,
-    ) -> tuple[list[FieldSpec], list[str]]:
+    ) -> tuple[dict[str, JsonSchemaDocument], list[str], list[str]]:
         table_query = text(
             """
             SELECT 1
@@ -239,7 +246,8 @@ class IntrospectionService:
                 {"schema_name": schema_name, "table_name": table_name},
             ).mappings()
 
-            fields: list[FieldSpec] = []
+            properties: dict[str, JsonSchemaDocument] = {}
+            required_fields: list[str] = []
             for row in rows:
                 mapped_type = map_postgres_type(
                     data_type=str(row["data_type"]),
@@ -257,15 +265,10 @@ class IntrospectionService:
                         },
                     )
 
-                fields.append(
-                    FieldSpec(
-                        name=str(row["column_name"]),
-                        type=mapped_type,
-                        nullable=str(row["is_nullable"]).upper() == "YES",
-                        default=None,
-                        description=None,
-                    )
-                )
+                column_name = str(row["column_name"])
+                properties[column_name] = mapped_type
+                if str(row["is_nullable"]).upper() != "YES":
+                    required_fields.append(column_name)
 
             primary_key_rows = connection.execute(
                 primary_keys_query,
@@ -273,4 +276,4 @@ class IntrospectionService:
             ).mappings()
             primary_keys = [str(row["column_name"]) for row in primary_key_rows]
 
-        return fields, primary_keys
+        return properties, required_fields, primary_keys

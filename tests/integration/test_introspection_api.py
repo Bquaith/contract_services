@@ -55,18 +55,18 @@ def test_introspect_table_creates_draft_contract_and_version(
         assert payload["version"]["created_by"] == "pytest"
 
         schema_json = payload["version"]["schema_json"]
-        fields = {field["name"]: field for field in schema_json["fields"]}
-        assert fields["id"]["type"] == "int"
-        assert fields["customer_name"]["type"] == "string"
-        assert fields["amount"]["type"] == "decimal"
-        assert fields["created_at"]["type"] == "timestamp"
-        assert fields["event_date"]["type"] == "date"
-        assert fields["is_active"]["type"] == "bool"
-        assert fields["payload"]["type"] == "json"
+        properties = schema_json["properties"]
+        assert properties["id"]["type"] == "integer"
+        assert properties["customer_name"]["type"] == "string"
+        assert properties["amount"]["type"] == "number"
+        assert properties["created_at"]["type"] == "string"
+        assert properties["created_at"]["format"] == "date-time"
+        assert properties["event_date"]["format"] == "date"
+        assert properties["is_active"]["type"] == "boolean"
+        assert properties["payload"] == {}
 
-        assert schema_json["keys"]["primary"] == ["id"]
-        assert schema_json["keys"]["business"] == []
-        assert schema_json["keys"]["hash_keys"] == []
+        assert schema_json["x-primaryKey"] == ["id"]
+        assert schema_json["x-businessKey"] == []
     finally:
         drop_session = db_session_factory()
         try:

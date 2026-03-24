@@ -6,10 +6,15 @@ from app.schemas.version import ContractVersionResponse
 
 
 class IntrospectionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     connection_string: str = Field(min_length=1)
-    schema: str = Field(min_length=1, max_length=63)
+    source_schema: str = Field(
+        min_length=1,
+        max_length=63,
+        validation_alias="schema",
+        serialization_alias="schema",
+    )
     table_name: str = Field(min_length=1, max_length=63)
     namespace: str = Field(min_length=1, max_length=120)
     name: str = Field(min_length=1, max_length=120)

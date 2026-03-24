@@ -1,17 +1,19 @@
-from app.schemas.contract import ContractSchema, FieldSpec, KeysSpec
-from app.schemas.enums import FieldType, ValidationVerdict
+from app.schemas.enums import ValidationVerdict
 from app.validators import validate_contract_schema
 
 
-def _valid_schema() -> ContractSchema:
-    return ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="amount", type=FieldType.INT, nullable=True),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=["id"], partition=[]),
-        constraints=[],
-    )
+def _valid_schema() -> dict:
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "amount": {"type": "integer"},
+        },
+        "required": ["id"],
+        "additionalProperties": False,
+        "x-primaryKey": ["id"],
+    }
 
 
 def test_validate_schema_ok() -> None:
@@ -20,40 +22,28 @@ def test_validate_schema_ok() -> None:
     assert result.violations == []
 
 
-def test_validate_schema_duplicate_field_names_fail() -> None:
-    schema = ContractSchema(
-        fields=[
-            FieldSpec(name="id", type=FieldType.STRING, nullable=False),
-            FieldSpec(name="id", type=FieldType.INT, nullable=True),
-        ],
-        keys=KeysSpec(primary=["id"], hash_keys=[], partition=[]),
-        constraints=[],
-    )
+def test_validate_schema_rejects_unsupported_keyword() -> None:
+    schema = _valid_schema()
+    schema["oneOf"] = [{"type": "object"}]
 
     result = validate_contract_schema(schema)
     assert result.verdict == ValidationVerdict.FAIL
-    assert any(v.code == "schema.fields.duplicate" for v in result.violations)
+    assert any(v.code == "schema.profile.keyword.unsupported" for v in result.violations)
 
 
-def test_validate_schema_primary_key_required() -> None:
-    schema = ContractSchema(
-        fields=[FieldSpec(name="id", type=FieldType.STRING, nullable=False)],
-        keys=KeysSpec(primary=[], hash_keys=[], partition=[]),
-        constraints=[],
-    )
+def test_validate_schema_required_property_must_exist() -> None:
+    schema = _valid_schema()
+    schema["required"] = ["id", "missing"]
 
     result = validate_contract_schema(schema)
     assert result.verdict == ValidationVerdict.FAIL
-    assert any(v.code == "schema.keys.primary.empty" for v in result.violations)
+    assert any(v.code == "schema.profile.required.unknown" for v in result.violations)
 
 
-def test_validate_schema_hash_keys_must_exist() -> None:
-    schema = ContractSchema(
-        fields=[FieldSpec(name="id", type=FieldType.STRING, nullable=False)],
-        keys=KeysSpec(primary=["id"], hash_keys=["missing"], partition=[]),
-        constraints=[],
-    )
+def test_validate_schema_extensions_must_reference_known_properties() -> None:
+    schema = _valid_schema()
+    schema["x-primaryKey"] = ["missing"]
 
     result = validate_contract_schema(schema)
     assert result.verdict == ValidationVerdict.FAIL
-    assert any(v.code == "schema.keys.hash.unknown" for v in result.violations)
+    assert any(v.code == "schema.profile.extension.unknown_field" for v in result.violations)

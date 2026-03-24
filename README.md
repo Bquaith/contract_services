@@ -2,15 +2,18 @@
 
 Инфраструктурный сервис управления Data Contracts для контрактно-ориентированной интеграции данных.
 
-Сервис хранит и версионирует контракты, валидирует схемы, проверяет совместимость версий и публикует активную версию контракта для потребителей.
+Сервис хранит и версионирует контракты, валидирует JSON Schema, проверяет совместимость версий и публикует активную версию контракта для потребителей.
 
 ## Основные возможности
 
 - CRUD контрактов данных (`namespace + name` уникальны)
 - Версионирование контрактов (`SemVer`)
 - Promote/deprecate версий
-- Валидация схемы контракта
-- Проверка совместимости (`backward`, `forward`, `full`, `none`)
+- Валидация схемы контракта в формате JSON Schema Draft 2020-12
+- Проверка совместимости (`backward`, `forward`, `full`) между версиями схем
+- Автоматический SemVer policy-check при создании новой версии:
+  `PATCH` требует `full compatibility`, `MINOR` требует `backward compatibility`,
+  `MAJOR` допускает breaking changes
 - Генерация draft-контракта из существующей PostgreSQL таблицы (schema introspection)
 - Публикация active/конкретной версии для ingestion/runtime
 - Soft-delete (архивирование)
@@ -27,78 +30,6 @@
 - Pydantic v2 + pydantic-settings
 - pytest
 - Docker / docker-compose
-
-## Структура репозитория
-
-```text
-.
-├── app
-│   ├── api
-│   │   ├── deps.py
-│   │   ├── errors.py
-│   │   ├── metrics.py
-│   │   └── routers
-│   │       ├── contracts.py
-│   │       ├── introspection.py
-│   │       ├── publish.py
-│   │       ├── system.py
-│   │       └── validation.py
-│   ├── compatibility
-│   │   ├── diff.py
-│   │   └── rules.py
-│   ├── config
-│   │   └── settings.py
-│   ├── db
-│   │   ├── base.py
-│   │   ├── models.py
-│   │   └── session.py
-│   ├── logging
-│   │   └── setup.py
-│   ├── schemas
-│   │   ├── common.py
-│   │   ├── contract.py
-│   │   ├── enums.py
-│   │   ├── introspection.py
-│   │   ├── validation.py
-│   │   └── version.py
-│   ├── service
-│   │   ├── compatibility.py
-│   │   ├── contracts.py
-│   │   ├── introspection.py
-│   │   ├── utils.py
-│   │   ├── validation.py
-│   │   └── versions.py
-│   ├── validators
-│   │   └── contract_schema.py
-│   └── main.py
-├── alembic
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions
-│       └── 0001_initial.py
-├── docs
-│   └── adr
-│       ├── 0001-fastapi-postgresql.md
-│       └── 0002-jsonb-semver.md
-├── tests
-│   ├── integration
-│   │   ├── test_api.py
-│   │   └── test_introspection_api.py
-│   ├── unit
-│   │   ├── test_compatibility.py
-│   │   ├── test_introspection_mapping.py
-│   │   └── test_schema_validator.py
-│   └── conftest.py
-├── .env.example
-├── .github/workflows/ci.yml
-├── alembic.ini
-├── docker-compose.yml
-├── Dockerfile
-├── pyproject.toml
-├── pytest.ini
-├── requirements-dev.txt
-└── requirements.txt
-```
 
 ## Быстрый старт (Docker)
 
@@ -208,17 +139,16 @@ curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions" \
     "version": "1.0.0",
     "compatibility_mode": "backward",
     "schema": {
-      "fields": [
-        {"name": "order_id", "type": "string", "nullable": false},
-        {"name": "amount", "type": "int", "nullable": true}
-      ],
-      "keys": {
-        "primary": ["order_id"],
-        "business": ["order_id"],
-        "partition": [],
-        "hash_keys": ["order_id"]
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "order_id": {"type": "string"},
+        "amount": {"type": "integer"}
       },
-      "constraints": [],
+      "required": ["order_id"],
+      "additionalProperties": false,
+      "x-primaryKey": ["order_id"],
+      "x-businessKey": ["order_id"],
       "description": "v1"
     }
   }'
@@ -286,11 +216,3 @@ curl -X POST "$BASE_URL/introspect" \
 - `nullable: true -> false` считается breaking change (`fail`)
 - `int -> float` считается `warn`
 - `string -> int` считается `fail`
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`):
-
-- поднимает PostgreSQL service
-- применяет миграции
-- запускает `pytest`

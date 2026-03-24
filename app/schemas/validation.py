@@ -1,8 +1,8 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
-from app.schemas.contract import ContractSchema
+from app.schemas.contract import JsonSchemaDocument
 from app.schemas.enums import ValidationVerdict
 
 
@@ -11,13 +11,16 @@ class ValidationViolation(BaseModel):
 
     code: str
     message: str
-    field: str | None = None
+    path: str | None = None
 
 
 class SchemaValidationRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    schema: ContractSchema
+    schema_document: JsonSchemaDocument = Field(
+        validation_alias=AliasChoices("schema", "schema_document"),
+        serialization_alias="schema",
+    )
 
 
 class SchemaValidationResponse(BaseModel):

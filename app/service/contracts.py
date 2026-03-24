@@ -76,7 +76,7 @@ class ContractService:
         if status:
             stmt = stmt.where(Contract.status == status)
         if tag:
-            stmt = stmt.where(Contract.tags.any(tag))
+            stmt = stmt.where(Contract.tags.contains([tag]))
         if target_layer:
             stmt = stmt.where(Contract.target_layer == target_layer)
 
@@ -129,7 +129,7 @@ class ContractService:
         if "target_layer" in updates and updates["target_layer"] is not None:
             contract.target_layer = updates["target_layer"]
 
-        contract.updated_at = datetime.now(timezone.utc)
+        setattr(contract, "updated_at", datetime.now(timezone.utc))
         self.session.commit()
 
         self.session.refresh(contract)
@@ -139,8 +139,8 @@ class ContractService:
         contract = self.get_contract(contract_id)
 
         contract.status = ContractStatus.ARCHIVED
-        contract.deleted_at = datetime.now(timezone.utc)
-        contract.updated_at = datetime.now(timezone.utc)
+        setattr(contract, "deleted_at", datetime.now(timezone.utc))
+        setattr(contract, "updated_at", datetime.now(timezone.utc))
         self.session.commit()
 
         self.session.refresh(contract)
