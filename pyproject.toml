@@ -19,6 +19,7 @@ dependencies = [
     "pydantic-settings>=2.7,<3.0",
     "prometheus-client>=0.21,<1.0",
     "jsonschema>=4.25,<5.0",
+    "PyJWT[crypto]>=2.10,<3.0",
 ]
 
 [tool.setuptools]

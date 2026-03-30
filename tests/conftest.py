@@ -1,20 +1,30 @@
 from __future__ import annotations
 
+import json
 import os
+from datetime import datetime, timedelta, timezone
 
+import jwt
 import pytest
+from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.auth import get_token_verifier
 from app.config import get_settings
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
 
-
-TEST_API_KEY = "test-api-key"
+TEST_ISSUER_URL = "http://test-keycloak.local/realms/vkr"
+TEST_AUDIENCE = "contracts-api"
+TEST_KID = "pytest-key-1"
+TEST_PRIVATE_KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+TEST_PUBLIC_JWK = json.loads(jwt.algorithms.RSAAlgorithm.to_jwk(TEST_PRIVATE_KEY.public_key()))
+TEST_PUBLIC_JWK["kid"] = TEST_KID
+TEST_JWKS_JSON = json.dumps({"keys": [TEST_PUBLIC_JWK]})
 
 
 def _ensure_database_exists(database_url: str) -> None:
@@ -71,12 +81,41 @@ def db_session_factory(engine):
     return sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
 
+def _build_access_token(
+    *,
+    username: str,
+    roles: list[str],
+    subject: str | None = None,
+) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": subject or f"user:{username}",
+        "iss": TEST_ISSUER_URL,
+        "aud": TEST_AUDIENCE,
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(minutes=15)).timestamp()),
+        "preferred_username": username,
+        "system_roles": roles,
+    }
+    return jwt.encode(
+        payload,
+        TEST_PRIVATE_KEY,
+        algorithm="RS256",
+        headers={"kid": TEST_KID},
+    )
+
+
 @pytest.fixture
 def client(test_database_url: str, db_session_factory, clean_tables):
     _ = clean_tables
     os.environ["DATABASE_URL"] = test_database_url
-    os.environ["API_KEY"] = TEST_API_KEY
+    os.environ["AUTH_ENABLED"] = "true"
+    os.environ["AUTH_ISSUER_URL"] = TEST_ISSUER_URL
+    os.environ["AUTH_AUDIENCE"] = TEST_AUDIENCE
+    os.environ["AUTH_JWKS_JSON"] = TEST_JWKS_JSON
+    os.environ["AUTH_SWAGGER_CLIENT_ID"] = "contracts-ui-dev"
     get_settings.cache_clear()
+    get_token_verifier.cache_clear()
 
     app = create_app()
 
@@ -98,6 +137,19 @@ def client(test_database_url: str, db_session_factory, clean_tables):
 @pytest.fixture
 def write_headers() -> dict[str, str]:
     return {
-        "X-API-Key": TEST_API_KEY,
-        "X-Actor": "pytest",
+        "Authorization": f"Bearer {_build_access_token(username='pytest-admin', roles=['admin', 'producer', 'consumer'])}",
+    }
+
+
+@pytest.fixture
+def read_headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {_build_access_token(username='pytest-consumer', roles=['consumer'])}",
+    }
+
+
+@pytest.fixture
+def contracts_reader_headers() -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {_build_access_token(username='pytest-airflow', roles=['contracts_reader'])}",
     }

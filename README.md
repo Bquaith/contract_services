@@ -48,14 +48,20 @@ docker compose up --build
 ## Переменные окружения
 
 - `DATABASE_URL` — URL PostgreSQL
-- `API_KEY` — ключ для всех non-GET endpoint'ов (заголовок `X-API-Key`)
+- `AUTH_ENABLED` — включает OIDC/JWT auth через Keycloak
+- `AUTH_ISSUER_URL` — issuer URL realm'а Keycloak
+- `AUTH_JWKS_URL` — URL JWKS, если ключи нужно читать не по issuer hostname
+- `AUTH_AUDIENCE` — audience, который должен присутствовать в access token
 - `DATA_CONTRACTS_LOG_LEVEL` — уровень логирования
 
 Пример (`.env`):
 
 ```env
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/data_contracts
-API_KEY=dev-api-key
+AUTH_ENABLED=false
+AUTH_ISSUER_URL=http://localhost:8081/realms/vkr
+AUTH_JWKS_URL=
+AUTH_AUDIENCE=contracts-api
 DATA_CONTRACTS_LOG_LEVEL=INFO
 ```
 
@@ -81,11 +87,16 @@ source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 
 export DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/data_contracts
-export API_KEY=dev-api-key
+export AUTH_ENABLED=false
 
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
+
+Если сервис запускается в Docker, а Keycloak доступен на хосте, обычно нужно разделить:
+
+- `AUTH_ISSUER_URL=http://localhost:8081/realms/vkr`
+- `AUTH_JWKS_URL=http://host.docker.internal:8081/realms/vkr/protocol/openid-connect/certs`
 
 ## Тесты
 
@@ -97,8 +108,51 @@ pytest
 
 ## Безопасность
 
-- Для всех non-GET endpoint обязателен `X-API-Key`
-- Заголовок `X-Actor` используется как `created_by` (если отсутствует, используется `system`)
+- При `AUTH_ENABLED=true` все бизнес-эндпоинты, кроме `/health`, требуют `Authorization: Bearer <access_token>`
+- Роли читаются из claim `system_roles`
+- `created_by` заполняется из `preferred_username` токена, для service account — из `azp`
+- `/metrics` доступен только роли `admin`
+
+### Матрица ролей
+
+- `consumer` — чтение контрактов и published endpoint'ов
+- `producer` — создание/изменение контрактов, версий, validation, introspection
+- `admin` — полный доступ, включая archive/promote/deprecate и `/metrics`
+- `contracts_reader` — техническая read-only роль для Airflow/service accounts
+
+## Swagger UI login
+
+Для использования API через browser UI сервис поддерживает OAuth2 Authorization Code + PKCE в `/docs`.
+
+Если поднят `infra/docker-compose.yml`, bootstrap дополнительно создаёт browser client:
+
+- `contracts-ui-dev`
+
+При `AUTH_ENABLED=true` и стандартном `AUTH_SWAGGER_CLIENT_ID=contracts-ui-dev` сценарий такой:
+
+1. открыть `http://localhost:8000/docs`
+2. нажать `Authorize`
+3. войти через Keycloak
+4. Swagger UI сам получит bearer token и начнёт подставлять его в запросы
+
+## Keycloak flow
+
+Получить user token для `admin`:
+
+```bash
+export KC_TOKEN_URL=http://localhost:8081/realms/vkr/protocol/openid-connect/token
+export KC_CLIENT_ID=contracts-client
+export KC_CLIENT_SECRET=contracts-client-secret
+
+export ACCESS_TOKEN=$(
+  curl -s "$KC_TOKEN_URL" \
+    -d grant_type=password \
+    -d client_id="$KC_CLIENT_ID" \
+    -d client_secret="$KC_CLIENT_SECRET" \
+    -d username=admin \
+    -d password=admin | jq -r .access_token
+)
+```
 
 ## Примеры curl
 
@@ -106,7 +160,7 @@ pytest
 
 ```bash
 export BASE_URL=http://localhost:8000
-export API_KEY=dev-api-key
+export ACCESS_TOKEN=...
 ```
 
 ### 1. Создать контракт
@@ -114,8 +168,7 @@ export API_KEY=dev-api-key
 ```bash
 curl -X POST "$BASE_URL/contracts" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY" \
-  -H "X-Actor: platform-admin" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -d '{
     "namespace": "sales",
     "name": "orders",
@@ -133,8 +186,7 @@ curl -X POST "$BASE_URL/contracts" \
 ```bash
 curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY" \
-  -H "X-Actor: platform-admin" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -d '{
     "version": "1.0.0",
     "compatibility_mode": "backward",
@@ -159,8 +211,7 @@ curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions" \
 ```bash
 curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions/1.1.0/compatibility" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY" \
-  -H "X-Actor: platform-admin" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -d '{
     "base_version": "1.0.0",
     "mode": "backward"
@@ -170,7 +221,8 @@ curl -X POST "$BASE_URL/contracts/<CONTRACT_ID>/versions/1.1.0/compatibility" \
 ### 4. Получить active-версию
 
 ```bash
-curl "$BASE_URL/contracts/sales/orders/active"
+curl "$BASE_URL/contracts/sales/orders/active" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 ## Генерация контракта из существующей таблицы
@@ -181,8 +233,7 @@ curl "$BASE_URL/contracts/sales/orders/active"
 ```bash
 curl -X POST "$BASE_URL/introspect" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: $API_KEY" \
-  -H "X-Actor: platform-admin" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -d '{
     "connection_string": "postgresql+psycopg://postgres:postgres@localhost:5432/source_db",
     "schema": "public",

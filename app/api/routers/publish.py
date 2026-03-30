@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_version_service
+from app.auth import require_contract_read
 from app.schemas.version import PublishedContractResponse
 from app.service import ContractVersionService
 
@@ -13,6 +14,7 @@ router = APIRouter(prefix="/contracts", tags=["publish"])
 def get_active_contract(
     namespace: str,
     name: str,
+    _: Annotated[object, Depends(require_contract_read)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> PublishedContractResponse:
     contract, version = service.get_active_version_by_namespace_name(namespace, name)
@@ -24,6 +26,7 @@ def get_contract_version(
     namespace: str,
     name: str,
     version: str,
+    _: Annotated[object, Depends(require_contract_read)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> PublishedContractResponse:
     contract, version_row = service.get_version_by_namespace_name(namespace, name, version)

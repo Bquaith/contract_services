@@ -52,7 +52,7 @@ def test_introspect_table_creates_draft_contract_and_version(
         assert payload["contract"]["active_version"] is None
         assert payload["version"]["version"] == "0.1.0"
         assert payload["version"]["status"] == "draft"
-        assert payload["version"]["created_by"] == "pytest"
+        assert payload["version"]["created_by"] == "pytest-admin"
 
         schema_json = payload["version"]["schema_json"]
         properties = schema_json["properties"]

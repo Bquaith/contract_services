@@ -26,8 +26,14 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/data_contracts
-      API_KEY: dev-api-key
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_ISSUER_URL: ${AUTH_ISSUER_URL:-http://localhost:8081/realms/vkr}
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-http://host.docker.internal:8081/realms/vkr/protocol/openid-connect/certs}
+      AUTH_AUDIENCE: ${AUTH_AUDIENCE:-contracts-api}
+      AUTH_SWAGGER_CLIENT_ID: ${AUTH_SWAGGER_CLIENT_ID:-contracts-ui-dev}
       DATA_CONTRACTS_LOG_LEVEL: INFO
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped

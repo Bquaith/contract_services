@@ -61,14 +61,36 @@ def test_health_endpoint(client: TestClient) -> None:
     assert response.json()["status"] == "ok"
 
 
-def test_non_get_requires_api_key(client: TestClient) -> None:
+def test_openapi_exposes_keycloak_authorization_code_flow(client: TestClient) -> None:
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+
+    security_scheme = schema["components"]["securitySchemes"]["KeycloakOIDC"]
+    authorization_code_flow = security_scheme["flows"]["authorizationCode"]
+    assert authorization_code_flow["authorizationUrl"].endswith(
+        "/realms/vkr/protocol/openid-connect/auth"
+    )
+    assert authorization_code_flow["tokenUrl"].endswith("/realms/vkr/protocol/openid-connect/token")
+
+    assert schema["paths"]["/contracts"]["post"]["security"] == [{"KeycloakOIDC": ["openid"]}]
+    assert "security" not in schema["paths"]["/health"]["get"]
+    assert client.app.swagger_ui_init_oauth["clientId"] == "contracts-ui-dev"
+    assert client.app.swagger_ui_init_oauth["usePkceWithAuthorizationCodeGrant"] is True
+
+
+def test_non_get_requires_auth_token(client: TestClient) -> None:
     response = client.post("/contracts", json=_contract_payload())
     assert response.status_code == 401
     body = response.json()
     assert body["error"]["code"] == "unauthorized"
 
 
-def test_contract_lifecycle_and_publish(client: TestClient, write_headers: dict[str, str]) -> None:
+def test_contract_lifecycle_and_publish(
+    client: TestClient,
+    write_headers: dict[str, str],
+    read_headers: dict[str, str],
+) -> None:
     create_contract_resp = client.post("/contracts", json=_contract_payload(), headers=write_headers)
     assert create_contract_resp.status_code == 201
     contract_id = create_contract_resp.json()["id"]
@@ -91,7 +113,7 @@ def test_contract_lifecycle_and_publish(client: TestClient, write_headers: dict[
     assert promote_resp.status_code == 200
     assert promote_resp.json()["status"] == "stable"
 
-    active_resp = client.get("/contracts/sales/orders/active")
+    active_resp = client.get("/contracts/sales/orders/active", headers=read_headers)
     assert active_resp.status_code == 200
     active_payload = active_resp.json()
 
@@ -218,3 +240,46 @@ def test_validate_schema_endpoint(client: TestClient, write_headers: dict[str, s
     )
     assert response.status_code == 200
     assert response.json()["verdict"] == "ok"
+
+
+def test_contracts_reader_can_read_active_but_cannot_modify_contracts(
+    client: TestClient,
+    write_headers: dict[str, str],
+    contracts_reader_headers: dict[str, str],
+) -> None:
+    create_contract_resp = client.post(
+        "/contracts",
+        json=_contract_payload(namespace="sales", name="reader_probe"),
+        headers=write_headers,
+    )
+    assert create_contract_resp.status_code == 201
+    contract_id = create_contract_resp.json()["id"]
+
+    v1_resp = client.post(
+        f"/contracts/{contract_id}/versions",
+        json={"version": "1.0.0", "schema": _schema_v1(), "compatibility_mode": "backward"},
+        headers=write_headers,
+    )
+    assert v1_resp.status_code == 201
+
+    promote_resp = client.post(
+        f"/contracts/{contract_id}/versions/1.0.0/promote",
+        headers=write_headers,
+    )
+    assert promote_resp.status_code == 200
+
+    read_resp = client.get(
+        "/contracts/sales/reader_probe/active",
+        headers=contracts_reader_headers,
+    )
+    assert read_resp.status_code == 200
+
+    write_resp = client.post(
+        "/contracts",
+        json=_contract_payload(namespace="sales", name="forbidden_write"),
+        headers=contracts_reader_headers,
+    )
+    assert write_resp.status_code == 403
+    assert write_resp.json()["error"]["code"] == "forbidden"
+    assert write_resp.json()["error"]["message"] == "Access denied"
+    assert write_resp.json()["error"]["details"] == {}

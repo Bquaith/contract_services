@@ -9,6 +9,7 @@ from app.api.deps import (
     get_contract_service,
     get_version_service,
 )
+from app.auth import require_contract_admin, require_contract_read, require_contract_write
 from app.schemas.contract import (
     ContractCreateRequest,
     ContractListItem,
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/contracts", tags=["contracts"])
 @router.post("", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)
 def create_contract(
     payload: ContractCreateRequest,
+    _: Annotated[object, Depends(require_contract_write)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractService, Depends(get_contract_service)],
 ) -> ContractResponse:
@@ -46,6 +48,7 @@ def list_contracts(
     status_filter: ContractStatus | None = Query(default=None, alias="status"),
     tag: str | None = Query(default=None),
     target_layer: TargetLayer | None = Query(default=None),
+    _: Annotated[object, Depends(require_contract_read)] = None,
     service: ContractService = Depends(get_contract_service),
 ) -> list[ContractListItem]:
     rows = service.list_contracts(
@@ -62,6 +65,7 @@ def list_contracts(
 @router.get("/{contract_id}", response_model=ContractResponse)
 def get_contract(
     contract_id: UUID,
+    _: Annotated[object, Depends(require_contract_read)],
     service: Annotated[ContractService, Depends(get_contract_service)],
 ) -> ContractResponse:
     contract = service.get_contract(contract_id)
@@ -72,6 +76,7 @@ def get_contract(
 def update_contract(
     contract_id: UUID,
     payload: ContractUpdateRequest,
+    _: Annotated[object, Depends(require_contract_write)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractService, Depends(get_contract_service)],
 ) -> ContractResponse:
@@ -83,6 +88,7 @@ def update_contract(
 @router.delete("/{contract_id}", response_model=ContractResponse)
 def archive_contract(
     contract_id: UUID,
+    _: Annotated[object, Depends(require_contract_admin)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractService, Depends(get_contract_service)],
 ) -> ContractResponse:
@@ -99,6 +105,7 @@ def archive_contract(
 def create_version(
     contract_id: UUID,
     payload: ContractVersionCreateRequest,
+    _: Annotated[object, Depends(require_contract_write)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> ContractVersionResponse:
@@ -109,6 +116,7 @@ def create_version(
 @router.get("/{contract_id}/versions", response_model=list[ContractVersionResponse])
 def list_versions(
     contract_id: UUID,
+    _: Annotated[object, Depends(require_contract_read)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> list[ContractVersionResponse]:
     rows = service.list_versions(contract_id)
@@ -119,6 +127,7 @@ def list_versions(
 def get_version(
     contract_id: UUID,
     version: str,
+    _: Annotated[object, Depends(require_contract_read)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> ContractVersionResponse:
     row = service.get_version(contract_id, version)
@@ -129,6 +138,7 @@ def get_version(
 def promote_version(
     contract_id: UUID,
     version: str,
+    _: Annotated[object, Depends(require_contract_admin)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> ContractVersionResponse:
@@ -141,6 +151,7 @@ def promote_version(
 def deprecate_version(
     contract_id: UUID,
     version: str,
+    _: Annotated[object, Depends(require_contract_admin)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[ContractVersionService, Depends(get_version_service)],
 ) -> ContractVersionResponse:
@@ -157,6 +168,7 @@ def check_compatibility(
     contract_id: UUID,
     new_version: str,
     payload: CompatibilityCheckRequest,
+    _: Annotated[object, Depends(require_contract_write)],
     actor: Annotated[str, Depends(get_actor)],
     service: Annotated[CompatibilityService, Depends(get_compatibility_service)],
 ) -> CompatibilityCheckResponse:
