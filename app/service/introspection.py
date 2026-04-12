@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlsplit
 
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import Engine
@@ -65,6 +66,20 @@ def map_postgres_type(data_type: str, udt_name: str) -> dict[str, Any] | None:
     return None
 
 
+def validate_introspection_connection_string(connection_string: str) -> None:
+    scheme = urlsplit(connection_string).scheme.strip().lower()
+    if scheme == "postgresql+psycopg2":
+        raise ApiError(
+            status_code=422,
+            code="unsupported_connection_driver",
+            message="Driver 'psycopg2' is not installed; use 'postgresql+psycopg://...'",
+            details={
+                "connection_scheme": scheme,
+                "supported_scheme": "postgresql+psycopg",
+            },
+        )
+
+
 class IntrospectionService:
     def __init__(self, session: Session):
         self.session = session
@@ -78,6 +93,7 @@ class IntrospectionService:
                 details={"entity_type": payload.entity_type.value},
             )
 
+        validate_introspection_connection_string(payload.connection_string)
         remote_engine = create_engine(payload.connection_string, pool_pre_ping=True)
         try:
             if remote_engine.dialect.name != "postgresql":

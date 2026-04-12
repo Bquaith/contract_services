@@ -154,3 +154,28 @@ def test_introspect_returns_409_when_contract_exists(
             cleanup_session.commit()
         finally:
             cleanup_session.close()
+
+
+def test_introspect_returns_422_for_psycopg2_connection_string(
+    client,
+    write_headers: dict[str, str],
+) -> None:
+    response = client.post(
+        "/introspect",
+        json={
+            "connection_string": "postgresql+psycopg2://postgres:postgres@localhost:5432/source_db",
+            "schema": "public",
+            "table_name": "orders",
+            "namespace": "erp",
+            "name": "orders_contract_psycopg2",
+            "entity_type": "table",
+            "target_layer": "raw",
+        },
+        headers=write_headers,
+    )
+
+    assert response.status_code == 422
+    body = response.json()
+    assert body["error"]["code"] == "unsupported_connection_driver"
+    assert body["error"]["details"]["connection_scheme"] == "postgresql+psycopg2"
+    assert body["error"]["details"]["supported_scheme"] == "postgresql+psycopg"
