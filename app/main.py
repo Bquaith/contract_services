@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from time import perf_counter
 
 from app.api.errors import register_exception_handlers
 from app.api.metrics import record_http_request
@@ -33,8 +34,14 @@ def create_app() -> FastAPI:
 
     @app.middleware("http")
     async def metrics_middleware(request: Request, call_next):  # type: ignore[no-redef]
+        started_at = perf_counter()
         response = await call_next(request)
-        record_http_request(request.method, request.url.path, response.status_code)
+        record_http_request(
+            request.method,
+            request.url.path,
+            response.status_code,
+            perf_counter() - started_at,
+        )
         return response
 
     app.include_router(system_router)
